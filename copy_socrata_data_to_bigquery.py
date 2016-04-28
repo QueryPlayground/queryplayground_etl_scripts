@@ -11,13 +11,13 @@ try:
 except:
     pass
 import requests
-r.db('queryplayground').table('socrata_datasets').replace({"id": "data_seattle_gov_pu5n_trf4", "domain": "data.seattle.gov", "datasetid": "pu5n-trf4"}).run()
+#r.db('queryplayground').table('socrata_datasets').replace({"id": "data_seattle_gov_pu5n_trf4", "domain": "data.seattle.gov", "datasetid": "pu5n-trf4"}).run()
 for dataset in r.db('queryplayground').table('socrata_datasets').run():
     app_token = r.db('queryplayground').table('third_party_creds').get('socrata').run()['app_token']
     if not 'socrata_created_at' in dataset:
         local_filename = dataset['id']+'.csv'
         # NOTE the stream=True parameter
-        url = 'https://%s/resource/%s.csv?$select=:*,*&$limit=2' % (dataset['domain'], dataset['datasetid'])
+        url = 'https://%s/resource/%s.csv?$select=:*,*&$limit=100000000' % (dataset['domain'], dataset['datasetid'])
         req = requests.get(url, stream=True)
         with open(local_filename, 'wb') as f:
             for chunk in req.iter_content(chunk_size=1024): 
@@ -46,6 +46,8 @@ for dataset in r.db('queryplayground').table('socrata_datasets').run():
                 target_fp.write(row.strip('\n').strip())
             print first_row, row
             first_row = False
+        source_fp.close()
+        target_fp.close()
         schema = []
         for col in headers:
             schema.append({"name": col.strip('"'), "type": "string", "mode": "nullable"})
