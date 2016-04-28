@@ -17,8 +17,8 @@ while True:
             if not 'socrata_created_at' in dataset:
                 url = 'https://%s/resource/%s.csv?$select=:*,*&$limit=100000000' % (dataset['domain'], dataset['datasetid'])
             else:
-                socrata_created_at = r.db('queryplayground').table('socrata_datasets').run()['socrata_created_at']
-                socrata_updated_at = r.db('queryplayground').table('socrata_datasets').run()['socrata_updated_at']
+                socrata_created_at = dataset['socrata_created_at']
+                socrata_updated_at = dataset('queryplayground').table('socrata_datasets').run()['socrata_updated_at']
                 url = 'https://data.seattle.gov/resource/pu5n-trf4.json?$select=:*,*&$limit=2000000&$where=:created_at%%20>%%20"%s"%%20OR%%20:updated_at%%20>%%20"%s"&$$app_token=%s' % (socrata_created_at,socrata_updated_at,app_token)
             req = requests.get(url, stream=True)
 
