@@ -16,7 +16,7 @@ for dataset in r.db('queryplayground').table('socrata_datasets').run():
     if not 'socrata_created_at' in dataset:
         local_filename = dataset['id']+'.csv'
         # NOTE the stream=True parameter
-        url = 'https://%s/resource/%s.csv?$limit=10000000000' % (dataset['domain'], dataset['datasetid'])
+        url = 'https://%s/resource/%s.csv?$limit=1000' % (dataset['domain'], dataset['datasetid'])
         req = requests.get(url, stream=True)
         with open(local_filename, 'wb') as f:
             for chunk in req.iter_content(chunk_size=1024): 
@@ -40,7 +40,7 @@ for dataset in r.db('queryplayground').table('socrata_datasets').run():
                 first_row = False
             target_fp.write(row + newline)
         schema = ','.join([col+':string' for col in headers])     
-        os.system('bq load fromsocrata.%s %s %s' % (dataset['id'], local_filename, schema))
+        os.system('bq load fromsocrata.%s %s %s' % (dataset['id'], '2'+local_filename, schema))
         os.system('rm 2%s; rm %s' % (local_filename, local_filename))
     #t = list(r.db('public').table('police_response_events').order_by(r.desc('socrata_created_at'), index=r.desc('socrata_created_at')).limit(int(1)).run())[0]['socrata_created_at'].isoformat()[:-9]
     #data = requests.get('https://data.seattle.gov/resource/pu5n-trf4.json?$select=:*,*&$limit=2000000&$where=:created_at%%20>%%20"%s"&$$app_token=%s' % (t, app_token)).json()
