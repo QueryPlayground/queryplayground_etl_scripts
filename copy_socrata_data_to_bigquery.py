@@ -23,6 +23,7 @@ for dataset in r.db('queryplayground').table('socrata_datasets').run():
                 if chunk: # filter out keep-alive new chunks
                     f.write(chunk)
         url = url + '&$order=:created_at DESC&$limit=1&$select=:created_at&$$app_token=' + r.db('queryplayground').table('third_party_creds').get('socrata')['app_token']
+        print url
         dataset['socrata_created_at'] = requests.get(url).json()[0][':created_at']
         r.db('queryplayground').table('socrata_datasets').update(dataset).run()
         local_filename
