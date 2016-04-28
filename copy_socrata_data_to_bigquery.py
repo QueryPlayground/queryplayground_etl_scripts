@@ -14,7 +14,7 @@ app_token = r.db('queryplayground').table('third_party_creds').get('socrata').ru
 while True:
     results = requests.get('http://api.us.socrata.com/api/catalog/v1?domains=data.seattle.gov&only=datasets').json()['results']
     datasets = [{'id': item['metadata']['domain'].replace('.', '_')+'_'+item['resource']['nbe_fxf'].replace('-', '_'), 'domain': item['metadata']['domain'], 'datasetid':  item['resource']['nbe_fxf']} for item in results]
-    r.db('queryplayground').table_create('socrata_datasets').insert(datasets).run(conflict='update')
+    r.db('queryplayground').table('socrata_datasets').insert(datasets).run(conflict='update')
     for dataset in r.db('queryplayground').table('socrata_datasets').run():
         print dataset
         if not 'socrata_created_at' in dataset:
