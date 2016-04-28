@@ -11,14 +11,17 @@ try:
 except:
     pass
 import requests
-#r.db('queryplayground').table('socrata_datasets').replace({"id": "data_seattle_gov_pu5n_trf4", "domain": "data.seattle.gov", "datasetid": "pu5n-trf4"}).run()
+app_token = r.db('queryplayground').table('third_party_creds').get('socrata').run()['app_token']
 for dataset in r.db('queryplayground').table('socrata_datasets').run():
-    app_token = r.db('queryplayground').table('third_party_creds').get('socrata').run()['app_token']
-    if not 'socrata_created_at' in dataset:
-        local_filename = dataset['id']+'.csv'
-        # NOTE the stream=True parameter
-        url = 'https://%s/resource/%s.csv?$select=:*,*&$limit=100000000' % (dataset['domain'], dataset['datasetid'])
+        
+        if not 'socrata_created_at' in dataset:
+            url = 'https://%s/resource/%s.csv?$select=:*,*&$limit=100000000' % (dataset['domain'], dataset['datasetid'])
+        else:
+            socrata_created_at = r.db('queryplayground').table('socrata_datasets').run()['socrata_created_at']
+            socrata_updated_at = r.db('queryplayground').table('socrata_datasets').run()['socrata_updated_at']
+            url = 'https://data.seattle.gov/resource/pu5n-trf4.json?$select=:*,*&$limit=2000000&$where=:created_at%%20>%%20"%s"%%20OR%%20:updated_at%%20>%%20"%s"&$$app_token=%s' % (socrata_created_at, socrata_updated_at, app_token)).json()
         req = requests.get(url, stream=True)
+        
         with open(local_filename, 'wb') as f:
             for chunk in req.iter_content(chunk_size=1024): 
                 if chunk: # filter out keep-alive new chunks
@@ -27,6 +30,10 @@ for dataset in r.db('queryplayground').table('socrata_datasets').run():
         url += '$order=:created_at DESC&$limit=1&$select=:created_at&$$app_token=' + app_token
         print url
         dataset['socrata_created_at'] = requests.get(url).json()[0][':created_at']
+        url = 'https://%s/resource/%s.json?' % (dataset['domain'], dataset['datasetid'])
+        url += '$order=:updated_at DESC&$limit=1&$select=:updated_at&$$app_token=' + app_token
+        print url
+        dataset['socrata_updated_at'] = requests.get(url).json()[0][':updated_at']
         r.db('queryplayground').table('socrata_datasets').update(dataset).run()
         local_filename
         newline = os.linesep # Defines the newline based on your OS.
@@ -51,8 +58,6 @@ for dataset in r.db('queryplayground').table('socrata_datasets').run():
         schema = []
         for col in headers:
             schema.append({"name": col.strip('"'), "type": "string", "mode": "nullable"})
-        #schema = ','.join([col.strip('"')+':string:nullable' for col in headers])
-        #print schema
         import json
         with open('schema.json', 'w') as f:
             f.write(json.dumps(schema))
@@ -60,6 +65,5 @@ for dataset in r.db('queryplayground').table('socrata_datasets').run():
         cmd = 'bq load --apilog=- --schema=schema.json --skip_leading_rows=1 fromsocrata.%s %s' % (dataset['id']+'3', '2'+local_filename)
         print cmd
         os.system(cmd)
-        #os.system('rm 2%s; rm %s' % (local_filename, local_filename))
-    #t = list(r.db('public').table('police_response_events').order_by(r.desc('socrata_created_at'), index=r.desc('socrata_created_at')).limit(int(1)).run())[0]['socrata_created_at'].isoformat()[:-9]
-    #data = requests.get('https://data.seattle.gov/resource/pu5n-trf4.json?$select=:*,*&$limit=2000000&$where=:created_at%%20>%%20"%s"&$$app_token=%s' % (t, app_token)).json()
+        os.system('rm 2%s; rm %s' % (local_filename, local_filename))
+    
