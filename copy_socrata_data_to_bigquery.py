@@ -22,7 +22,8 @@ for dataset in r.db('queryplayground').table('socrata_datasets').run():
             for chunk in req.iter_content(chunk_size=1024): 
                 if chunk: # filter out keep-alive new chunks
                     f.write(chunk)
-        url = url + '&$order=:created_at DESC&$limit=1&$select=:created_at&$$app_token=' + app_token
+        url = 'https://%s/resource/%s.json?' % (dataset['domain'], dataset['datasetid'])
+        url += '$order=:created_at DESC&$limit=1&$select=:created_at&$$app_token=' + app_token
         print url
         dataset['socrata_created_at'] = requests.get(url).json()[0][':created_at']
         r.db('queryplayground').table('socrata_datasets').update(dataset).run()
