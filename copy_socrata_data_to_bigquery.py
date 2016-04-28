@@ -40,7 +40,7 @@ for dataset in r.db('queryplayground').table('socrata_datasets').run():
                 first_row = False
             target_fp.write(row + newline)
         schema = ','.join([col+':string' for col in headers])     
-        os.system('bq load fromsocrata.%s %s %s' % (dataset['id'], local_file, schema))
+        os.system('bq load fromsocrata.%s %s %s' % (dataset['id'], local_filename, schema))
         os.system('rm 2%s; rm %s' % (local_file, local_file))
     #t = list(r.db('public').table('police_response_events').order_by(r.desc('socrata_created_at'), index=r.desc('socrata_created_at')).limit(int(1)).run())[0]['socrata_created_at'].isoformat()[:-9]
     #data = requests.get('https://data.seattle.gov/resource/pu5n-trf4.json?$select=:*,*&$limit=2000000&$where=:created_at%%20>%%20"%s"&$$app_token=%s' % (t, app_token)).json()
