@@ -17,7 +17,7 @@ for dataset in r.db('queryplayground').table('socrata_datasets').run():
     if not 'socrata_created_at' in dataset:
         local_filename = dataset['id']+'.csv'
         # NOTE the stream=True parameter
-        url = 'https://%s/resource/%s.csv?$select=:*,*&$limit=1' % (dataset['domain'], dataset['datasetid'])
+        url = 'https://%s/resource/%s.csv?$select=:*,*&$limit=2' % (dataset['domain'], dataset['datasetid'])
         req = requests.get(url, stream=True)
         with open(local_filename, 'wb') as f:
             for chunk in req.iter_content(chunk_size=1024): 
@@ -35,11 +35,17 @@ for dataset in r.db('queryplayground').table('socrata_datasets').run():
         target_fp = open('2'+local_filename, 'w')
         first_row = True
         for row in source_fp:
+            
             if first_row:
                 row = row.replace(':', 'socrata_').replace('@', '_')
                 headers = row.strip().split(',')
-                first_row = False
-            target_fp.write(row)
+                
+            if (row.strip('\n').strip()):
+                if not first_row:
+                    target_fp.write('\n')
+                target_fp.write(row.strip('\n').strip())
+            print first_row, row
+            first_row = False
         schema = []
         for col in headers:
             schema.append({"name": col.strip('"'), "type": "string", "mode": "nullable"})
@@ -49,7 +55,7 @@ for dataset in r.db('queryplayground').table('socrata_datasets').run():
         with open('schema.json', 'w') as f:
             f.write(json.dumps(schema))
         import json
-        cmd = 'bq load --apilog=- --schema=schema.json --skip_leading_rows=1 fromsocrata.%s %s' % (dataset['id']+'2', '2'+local_filename)
+        cmd = 'bq load --apilog=- --schema=schema.json --skip_leading_rows=1 fromsocrata.%s %s' % (dataset['id']+'3', '2'+local_filename)
         print cmd
         os.system(cmd)
         #os.system('rm 2%s; rm %s' % (local_filename, local_filename))
