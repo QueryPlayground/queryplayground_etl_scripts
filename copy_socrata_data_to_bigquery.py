@@ -24,7 +24,7 @@ while True:
             socrata_updated_at = dataset['socrata_updated_at']
             url = 'https://data.seattle.gov/resource/pu5n-trf4.json?$select=:*,*&$limit=2000000&$where=:created_at%%20>%%20"%s"%%20OR%%20:updated_at%%20>%%20"%s"&$$app_token=%s' % (socrata_created_at,socrata_updated_at,app_token)
         req = requests.get(url, stream=True)
-
+        local_filename = dataset['id']+'.csv'
         with open(local_filename, 'wb') as f:
             for chunk in req.iter_content(chunk_size=1024): 
                 if chunk: # filter out keep-alive new chunks
